@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOPI – Group Calendar</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Calibri, sans-serif; background: #EDF2FA; }
+.topbar { background: #1F3864; color: white; padding: 8px 16px; box-shadow: 0 2px 10px #0005; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.topbar label { font-size: 11px; color: #9DC3E6; margin-right: 3px; }
+.topbar input[type=number] { padding: 4px 7px; border: none; border-radius: 5px; font-size: 12px; width: 68px; background: #2E4F7A; color: white; }
+.tbtn { padding: 5px 13px; border: 1.5px solid #5BA3E0; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: #9DC3E6; transition: background .15s; white-space: nowrap; }
+.tbtn:hover { background: #2E4F7A; color: white; }
+.seg { display: flex; border-radius: 5px; overflow: hidden; border: 1px solid #3A5F8A; flex-shrink: 0; }
+.seg button { padding: 4px 10px; border: none; background: #2A4668; color: #8ABADD; font-size: 11px; font-weight: 600; cursor: pointer; border-right: 1px solid #3A5F8A; transition: background .12s; }
+.seg button:last-child { border-right: none; }
+.seg button.active { background: #5BA3E0; color: white; }
+.seg button:hover:not(.active) { background: #344F6E; }
+.sep { width: 1px; height: 22px; background: #2E4F7A; flex-shrink: 0; }
+.overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(10,20,40,.6); backdrop-filter: blur(2px); align-items: center; justify-content: center; }
+.overlay.open { display: flex; }
+.panel { background: white; border-radius: 14px; box-shadow: 0 8px 40px #0006; width: 560px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column; position: relative; }
+.panel-wide { width: 820px; }
+.panel-head { padding: 20px 24px 12px; border-bottom: 1px solid #EEF2F8; flex-shrink: 0; }
+.panel-head h2 { font-size: 16px; font-weight: 600; color: #1F3864; margin-bottom: 3px; }
+.panel-head .psub { font-size: 12px; color: #999; }
+.panel-close { position: absolute; top: 14px; right: 18px; background: none; border: none; font-size: 20px; cursor: pointer; color: #bbb; line-height: 1; }
+.panel-close:hover { color: #333; }
+.panel-body { overflow-y: auto; padding: 14px 24px; flex: 1; }
+.panel-foot { padding: 12px 24px; border-top: 1px solid #EEF2F8; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 10px; }
+.task-row { display: grid; grid-template-columns: 4px 1fr 148px 32px; align-items: center; gap: 0 10px; padding: 9px 10px; border-radius: 9px; margin-bottom: 7px; border: 1px solid #E0E8F8; background: #F5F8FF; }
+.task-row.ebt-row { background: #C0392B; border-color: #A93226; }
+.task-row.ebt-row .task-info-name { color: white; }
+.task-row.ebt-row .task-info-sub { color: rgba(255,255,255,.7); }
+.task-color-bar { width: 4px; border-radius: 3px; align-self: stretch; min-height: 32px; }
+.task-info { min-width: 0; }
+.task-info-name { font-size: 12.5px; font-weight: 600; color: #1F3864; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-info-sub { font-size: 10.5px; color: #888; margin-top: 2px; }
+.task-right { display: flex; align-items: center; gap: 5px; justify-content: flex-end; }
+.task-right .dl-val { font-size: 14px; font-weight: 700; color: #1F3864; min-width: 28px; text-align: right; }
+.ebt-row .task-right .dl-val { color: white; }
+.task-right .unit { font-size: 11px; color: #999; white-space: nowrap; }
+.ebt-row .task-right .unit { color: rgba(255,255,255,.7); }
+.task-right .sep-txt { font-size: 12px; color: #aaa; }
+.task-right input[type=number] { padding: 5px 6px; border: 1.5px solid #CBD5E8; border-radius: 7px; font-size: 13px; font-weight: 700; text-align: center; color: #1F3864; background: white; width: 50px; }
+.task-right input:focus { outline: none; border-color: #2E75B6; }
+.task-info input[type=text] { width: 100%; padding: 3px 6px; border: 1.5px solid #CBD5E8; border-radius: 6px; font-size: 12.5px; font-weight: 600; color: #1F3864; background: white; }
+.task-info input[type=text]:focus { outline: none; border-color: #2E75B6; }
+.ebt-row .task-info input[type=text] { background: rgba(255,255,255,.15); color: white; border-color: rgba(255,255,255,.3); }
+.ebt-row .task-right input { background: rgba(255,255,255,.15); color: white; border-color: rgba(255,255,255,.3); }
+.del-btn { background: none; border: none; cursor: pointer; font-size: 16px; color: #ccc; padding: 2px 4px; border-radius: 5px; }
+.del-btn:hover { color: #C0392B; background: #FFEAEA; }
+.ebt-row .del-btn { color: rgba(255,255,255,.5); }
+.ebt-row .del-btn:hover { color: white; background: rgba(255,255,255,.2); }
+.add-btn { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 9px; border: 1.5px dashed #CBD5E8; background: none; cursor: pointer; color: #888; font-size: 12px; font-weight: 600; width: 100%; }
+.add-btn:hover { border-color: #2E75B6; color: #2E75B6; }
+.btn-edit { padding: 7px 18px; border: 1.5px solid #2E75B6; border-radius: 8px; background: white; color: #2E75B6; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-edit:hover { background: #EBF3FF; }
+.btn-apply { padding: 7px 20px; border: none; border-radius: 8px; background: #1F3864; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-apply:hover { background: #2E75B6; }
+.btn-cancel { padding: 7px 16px; border: 1.5px solid #CBD5E8; border-radius: 8px; background: white; font-size: 13px; color: #555; cursor: pointer; }
+.btn-cancel:hover { background: #F0F4FF; }
+.legend { display: flex; flex-wrap: wrap; gap: 5px 14px; padding: 7px 16px; background: #F7FAFF; border-bottom: 1px solid #D0DCF0; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #333; }
+.ldot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+/* SharePoint: použij pevnou výšku nebo min-height místo 100vh */
+.tbl-wrap { overflow: auto; height: 70vh; min-height: 400px; }
+table { border-collapse: collapse; table-layout: fixed; width: max-content; }
+col.c-month { width: 76px; } col.c-task { width: 155px; } col.c-comp { width: 58px; } col.c-term { width: 110px; } col.c-day { width: 28px; }
+thead tr th { position: sticky; background: #1F3864; z-index: 10; }
+thead tr:nth-child(1) th { top: 0; } thead tr:nth-child(2) th { top: 28px; }
+td.c-month, th.c-month { position: sticky; left: 0; z-index: 8; }
+td.c-task,  th.c-task  { position: sticky; left: 76px; z-index: 8; }
+td.c-comp,  th.c-comp  { position: sticky; left: 231px; z-index: 8; }
+td.c-term,  th.c-term  { position: sticky; left: 289px; z-index: 8; }
+thead th.c-month, thead th.c-task, thead th.c-comp, thead th.c-term { z-index: 15; }
+th { color: white; font-weight: 600; font-size: 11px; text-align: center; padding: 0 3px; height: 28px; border-right: 1px solid #2E4F7A; white-space: nowrap; overflow: hidden; }
+th.c-month { text-align: left; padding-left: 10px; } th.c-task { text-align: left; padding-left: 10px; background: #1F3864; }
+th.c-comp { background: #1F3864; } th.c-term { text-align: left; padding-left: 8px; background: #1F3864; color: #9DC3E6; font-size: 10px; }
+th.h-daynum { font-size: 12px; font-weight: 700; } th.h-dayname { font-size: 9px; font-weight: 400; color: #9DC3E6; height: 22px; }
+tr.mhdr td { background: #253C60; color: white; font-size: 11px; font-weight: 700; height: 22px; border-bottom: 2px solid #1F3864; border-right: 1px solid #1F3864; text-align: center; padding: 0 2px; }
+tr.mhdr td.c-month { text-align: left; padding-left: 10px; font-size: 12px; color: white; }
+tr.mhdr td.c-task { background: #253C60; } tr.mhdr td.c-comp { background: #253C60; } tr.mhdr td.c-term { background: #253C60; }
+tr.mhdr td.we-d { background: #1E3250; color: #6A8AAC; } tr.mhdr td.hol-d { background: #3D1E1E; color: #FF9999; }
+tr.trow td { height: 26px; border-bottom: 1px solid #E4EBF5; border-right: 1px solid #E4EBF5; vertical-align: middle; background: white; text-align: center; padding: 0 2px; white-space: nowrap; overflow: hidden; }
+tr.trow.odd td { background: #F6F9FF; } tr.trow:hover td { background: #EBF3FF !important; }
+tr.trow.ebt-trow td { background: #FADBD8 !important; }
+tr.trow.ebt-trow td.c-task { background: #FADBD8 !important; color: #111; }
+tr.trow.ebt-trow td.c-comp { background: #FADBD8 !important; color: #C0392B; }
+tr.trow.ebt-trow td.c-term { background: #FADBD8 !important; }
+tr.trow.ebt-trow td.we-d { background: #E8BEBC !important; } tr.trow.ebt-trow td.hol-d { background: #F5B7B1 !important; }
+tr.trow.ebt-trow td.no-day { background: #F0CECE !important; } tr.trow.ebt-trow td.review-bg { background: #A9CCE3 !important; }
+tr.trow.ebt-trow:hover td { background: #F5C6C2 !important; }
+td.c-month { font-size: 10.5px; font-weight: 700; color: white !important; background: #2E4F7A !important; text-align: center; text-transform: uppercase; letter-spacing: .5px; border-right: 2px solid #1F3864; white-space: nowrap; overflow: hidden; padding: 0 4px; }
+td.c-task { text-align: left; padding-left: 8px; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: white; }
+tr.trow.odd td.c-task { background: #F6F9FF; }
+td.c-comp { font-size: 11px; font-weight: 700; text-align: center; background: white; white-space: nowrap; border-right: 1px solid #D0DCF0; }
+tr.trow.odd td.c-comp { background: #F6F9FF; }
+td.c-term { text-align: left; padding-left: 7px; background: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 2px solid #D0DCF0; }
+tr.trow.odd td.c-term { background: #F6F9FF; }
+td.we-d { background: #EBEBEB !important; } td.hol-d { background: #FFE8E8 !important; }
+tr.trow.odd td.we-d { background: #E3E3E3 !important; } tr.trow.odd td.hol-d { background: #FFE0E0 !important; }
+td.no-day { background: #F0F2F6 !important; border-right: none; }
+td.review-bg { background: #C8DFF5 !important; } tr.trow.odd td.review-bg { background: #BDD8F2 !important; }
+.dlmark { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:700;color:white;line-height:1; }
+.dlmark-shift { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:700;color:white;line-height:1;opacity:.6; }
+.dlmark-exact { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;font-size:9px;font-weight:700;color:white;line-height:1; }
+.dlmark-dep { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:700;color:white;line-height:1;box-shadow:0 0 0 2px white inset; }
+.hol-switcher { display:flex;align-items:center;gap:8px;padding:10px 24px;border-bottom:1px solid #EEF2F8;flex-shrink:0; }
+.hol-switcher span { font-size:11px;color:#888; }
+.hol-sw-btn { padding:3px 12px;border:1.5px solid #CBD5E8;border-radius:5px;background:white;color:#555;font-size:11px;font-weight:600;cursor:pointer; }
+.hol-sw-btn.active { background:#2E75B6;border-color:#2E75B6;color:white; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;height:46px;border-radius:5px;overflow:hidden;background:white;padding:2px 6px">
+    <svg viewBox="0 0 234 230" width="68" height="40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="234" height="230" fill="white"/>
+      <polyline points="8,55 8,8 55,8" fill="none" stroke="#2D8B3A" stroke-width="13" stroke-linecap="butt" stroke-linejoin="miter"/>
+      <polyline points="179,8 226,8 226,55" fill="none" stroke="#2D8B3A" stroke-width="13" stroke-linecap="butt" stroke-linejoin="miter"/>
+      <polyline points="8,175 8,222 55,222" fill="none" stroke="#2D8B3A" stroke-width="13" stroke-linecap="butt" stroke-linejoin="miter"/>
+      <polyline points="179,222 226,222 226,175" fill="none" stroke="#2D8B3A" stroke-width="13" stroke-linecap="butt" stroke-linejoin="miter"/>
+      <text x="117" y="148" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="100" fill="#1C1C1C">HOPI</text>
+      <rect x="8" y="188" width="218" height="26" fill="#2D8B3A"/>
+      <text x="117" y="208" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="22" letter-spacing="5" fill="white">HOLDING</text>
+    </svg>
+  </div>
+  <div class="sep"></div>
+  <span style="font-size:17px;font-weight:700;letter-spacing:.4px;white-space:nowrap">FINANCE / CONTROLLING – Group Calendar</span>
+  <div class="sep"></div>
+  <div><label id="lbl-year">Year</label><input type="number" id="yr" value="2026" min="2024" max="2035" onchange="build()"></div>
+  <div><label id="lbl-firms">Companies</label><input type="number" id="fc" value="28" min="1" max="999"></div>
+  <div class="sep"></div>
+  <span id="lbl-shift" style="font-size:11px;color:#9DC3E6">Shift:</span>
+  <div class="seg" id="seg-mode">
+    <button id="btn-before" class="active" onclick="setMode('pred',this)">Before</button>
+    <button id="btn-on" onclick="setMode('na',this)">On</button>
+    <button id="btn-after" onclick="setMode('po',this)">After</button>
+  </div>
+  <div class="sep"></div>
+  <span id="lbl-country" style="font-size:11px;color:#9DC3E6">Holidays:</span>
+  <div class="seg" id="seg-country">
+    <button class="active" onclick="setCountry('cz',this)">CZ</button>
+    <button onclick="setCountry('sk',this)">SK</button>
+    <button onclick="setCountry('pl',this)">PL</button>
+    <button onclick="setCountry('hu',this)">HU</button>
+    <button onclick="setCountry('ro',this)">RO</button>
+    <button id="btn-all-country" onclick="setCountry('all',this)">ALL</button>
+  </div>
+  <div class="sep"></div>
+  <button id="btn-panel" class="tbtn" onclick="openPanel()">📋 Task overview – deadlines</button>
+  <button id="btn-holidays" class="tbtn" onclick="openHolidays()">🗓 Holidays</button>
+  <button class="tbtn" onclick="window.print()">🖨 PDF</button>
+  <div class="sep"></div>
+  <span id="lbl-lang" style="font-size:11px;color:#9DC3E6">Language:</span>
+  <div class="seg" id="seg-lang">
+    <button class="active" onclick="switchLang('en',this)">EN</button>
+    <button onclick="switchLang('cz',this)">CZ</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closePanel()">
+  <div class="panel">
+    <div class="panel-head">
+      <button class="panel-close" onclick="closePanel()">✕</button>
+      <h2 id="panel-title"></h2><p class="psub" id="panel-sub"></p>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+    <div class="panel-foot" id="panel-foot"></div>
+  </div>
+</div>
+
+<div class="overlay" id="hol-overlay" onclick="if(event.target===this)closeHolidays()">
+  <div class="panel panel-wide">
+    <div class="panel-head">
+      <button class="panel-close" onclick="closeHolidays()">✕</button>
+      <h2 id="hol-title"></h2><p class="psub" id="hol-sub"></p>
+    </div>
+    <div class="hol-switcher" id="hol-switcher"></div>
+    <div class="panel-body" style="padding:0 0 8px;" id="hol-body"></div>
+    <div class="panel-foot" style="justify-content:flex-end;">
+      <button class="btn-cancel" id="hol-close-btn" onclick="closeHolidays()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="legend" id="leg"></div>
+<div class="tbl-wrap">
+  <table id="tbl"><colgroup id="cg"></colgroup><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+</div>
+
+<script>
+// ── Storage: pouze localStorage (funguje v SharePoint i lokálně) ──
+var SK = 'gc_labels_v2';
+function sSave(obj) { try { localStorage.setItem(SK, JSON.stringify(obj)); } catch(e) {} }
+function sLoad(cb) {
+  var out = {};
+  try { var r = localStorage.getItem(SK); if (r) out = JSON.parse(r); } catch(e) {}
+  cb(out);
+}
+
+var EBT_KEYS=['ebt_odhad','ebt_final'], COUNTRIES=['cz','sk','pl','hu','ro'];
+var FLAGS={cz:'🇨🇿',sk:'🇸🇰',pl:'🇵🇱',hu:'🇭🇺',ro:'🇷🇴'};
+var curLang='en', curCountry='cz', holLang='loc', editMode=false, globalMode='pred', nextId=10;
+var G={labels:{},deadlines:{}};
+var tasks=[];
+
+var TR={
+  en:{months:["January","February","March","April","May","June","July","August","September","October","November","December"],days:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],year:"Year",firms:"Companies",shift:"Shift:",holidays:"Holidays:",lang:"Language:",before:"Before",on:"On",after:"After",panelBtn:"📋 Task overview – deadlines",holBtn:"🗓 Holidays",panelTitle:"Task overview – deadlines",panelSubView:"Overview of task deadlines. Click Edit to make changes.",panelSubEdit:"Edit names and deadlines. Click Save to apply.",colMonth:"Month",colTask:"Task",colComp:"Company",colDeadline:"Deadline",legendReview:"Review window",legendWeekend:"Weekend",legendHoliday:"Public holiday",edit:"✏ Edit",save:"💾 Save",cancel:"Cancel",close:"Close",addTask:"Add task",newTask:"New task",noDepLbl:"Fixed deadline, no dependency",day:" day",holTitle:"Public Holidays",holSub:"All countries – full year overview",holDate:"Date",holDay:"Day",holNames:"Holiday names:",compGroup:"Group",compLocal:"Local"},
+  cz:{months:["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"],days:["Ne","Po","Út","St","Čt","Pá","So"],year:"Rok",firms:"Firem",shift:"Posun:",holidays:"Svátky:",lang:"Jazyk:",before:"Před",on:"Na",after:"Po",panelBtn:"📋 Přehled úkolů – termíny",holBtn:"🗓 Svátky",panelTitle:"Přehled úkolů – termíny",panelSubView:"Náhled termínů. Klikněte Upravit pro editaci.",panelSubEdit:"Upravte názvy a termíny. Uložte pro použití.",colMonth:"Měsíc",colTask:"Úkol",colComp:"Společnost",colDeadline:"Termín",legendReview:"Review okno",legendWeekend:"Víkend",legendHoliday:"Státní svátek",edit:"✏ Upravit",save:"💾 Uložit",cancel:"Zrušit",close:"Zavřít",addTask:"Přidat úkol",newTask:"Nový úkol",noDepLbl:"Pevný termín bez závislosti",day:". den",holTitle:"Státní svátky",holSub:"Přehled všech zemí – celý rok",holDate:"Datum",holDay:"Den",holNames:"Jazyk názvů:",compGroup:"Skupina",compLocal:"Lokální"}
+};
+function lc(k){return TR[curLang][k];}
+
+var CNAMES={cz:{loc:'Česká republika',cz:'Česká republika',en:'Czech Republic'},sk:{loc:'Slovensko',cz:'Slovensko',en:'Slovakia'},pl:{loc:'Polska',cz:'Polsko',en:'Poland'},hu:{loc:'Magyarország',cz:'Maďarsko',en:'Hungary'},ro:{loc:'România',cz:'Rumunsko',en:'Romania'}};
+var HN={cz:{loc:{'01-01':'Nový rok','05-01':'Svátek práce','05-08':'Den vítězství','07-05':'Cyril a Metoděj','07-06':'Jan Hus','09-28':'Česká státnost','10-28':'Vznik Československa','11-17':'Den svobody','12-24':'Štědrý den','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','gf':'Velký pátek','em':'Velikonoční pondělí'},cz:{'01-01':'Nový rok','05-01':'Svátek práce','05-08':'Den vítězství','07-05':'Cyril a Metoděj','07-06':'Jan Hus','09-28':'Česká státnost','10-28':'Vznik Československa','11-17':'Den svobody','12-24':'Štědrý den','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','gf':'Velký pátek','em':'Velikonoční pondělí'},en:{'01-01':"New Year's",'05-01':'Labour Day','05-08':'Victory Day','07-05':'Sts. Cyril & Methodius','07-06':'Jan Hus Day','09-28':'Czech Statehood Day','10-28':'Czechoslovakia Day','11-17':'Freedom Day','12-24':'Christmas Eve','12-25':'Christmas Day','12-26':'2nd Christmas Day','gf':'Good Friday','em':'Easter Monday'}},sk:{loc:{'01-01':'Nový rok / Deň vzniku SR','01-06':'Traja králi','05-01':'Sviatok práce','05-08':'Deň víťazstva','07-05':'Cyril a Metod','08-29':'SNP','09-01':'Deň Ústavy SR','09-15':'Sedembolestná P. Mária','11-01':'Sviatok všetkých svätých','11-17':'Deň boja za slobodu','12-24':'Štedrý deň','12-25':'1. sviatok vianočný','12-26':'2. sviatok vianočný','gf':'Veľký piatok','em':'Veľkonočný pondelok'},cz:{'01-01':'Nový rok / Vznik SR','01-06':'Tři králové','05-01':'Svátek práce','05-08':'Den vítězství','07-05':'Cyril a Metoděj','08-29':'SNP','09-01':'Den ústavy SR','09-15':'Bolestná P. Marie','11-01':'Svátek všech svatých','11-17':'Den boje za svobodu','12-24':'Štědrý den','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','gf':'Velký pátek','em':'Velikonoční pondělí'},en:{'01-01':"New Year's / SR Foundation",'01-06':'Epiphany','05-01':'Labour Day','05-08':'Victory Day','07-05':'Sts. Cyril & Methodius','08-29':'SNP Day','09-01':'Constitution Day','09-15':'Our Lady of Sorrows','11-01':"All Saints'",'11-17':'Freedom Day','12-24':'Christmas Eve','12-25':'Christmas Day','12-26':'2nd Christmas Day','gf':'Good Friday','em':'Easter Monday'}},pl:{loc:{'01-01':'Nowy Rok','01-06':'Trzech Króli','05-01':'Święto Pracy','05-03':'Święto Konstytucji','08-15':'Wniebowzięcie NMP','11-01':'Wszystkich Świętych','11-11':'Święto Niepodległości','12-25':'1. dzień Bożego Narodzenia','12-26':'2. dzień Bożego Narodzenia','em':'Poniedziałek Wielkanocny','pent':'Zesłanie Ducha Świętego','cc':'Boże Ciało'},cz:{'01-01':'Nový rok','01-06':'Tři králové','05-01':'Svátek práce','05-03':'Den ústavy','08-15':'Nanebevzetí P. Marie','11-01':'Svátek všech svatých','11-11':'Den nezávislosti','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','em':'Velikonoční pondělí','pent':'Letnice','cc':'Boží tělo'},en:{'01-01':"New Year's",'01-06':'Epiphany','05-01':'Labour Day','05-03':'Constitution Day','08-15':'Assumption of Mary','11-01':"All Saints'",'11-11':'Independence Day','12-25':'Christmas Day','12-26':'2nd Christmas Day','em':'Easter Monday','pent':'Pentecost','cc':'Corpus Christi'}},hu:{loc:{'01-01':'Újév','03-15':'Nemzeti ünnep','05-01':'A munka ünnepe','08-20':'Az államalapítás ünnepe','10-23':'Az 1956-os forradalom ünnepe','11-01':'Mindenszentek','12-25':'Karácsony első napja','12-26':'Karácsony második napja','gf':'Nagypéntek','em':'Húsvéthétfő','wm':'Pünkösd hétfő'},cz:{'01-01':'Nový rok','03-15':'Národní svátek','05-01':'Svátek práce','08-20':'Den státnosti','10-23':'Svátek revoluce 1956','11-01':'Svátek všech svatých','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','gf':'Velký pátek','em':'Velikonoční pondělí','wm':'Svatodušní pondělí'},en:{'01-01':"New Year's",'03-15':'National Day','05-01':'Labour Day','08-20':'State Foundation Day','10-23':'1956 Revolution Day','11-01':"All Saints'",'12-25':'Christmas Day','12-26':'2nd Christmas Day','gf':'Good Friday','em':'Easter Monday','wm':'Whit Monday'}},ro:{loc:{'01-01':'Anul Nou (1)','01-02':'Anul Nou (2)','01-24':'Ziua Unirii','05-01':'Ziua Muncii','06-01':'Ziua Copilului','08-15':'Adormirea Maicii Domnului','11-30':'Sfântul Andrei','12-01':'Ziua Națională','12-25':'Crăciunul (1)','12-26':'Crăciunul (2)','oes':'Paștele ortodox','oem':'Lunea Paștelui','opent':'Rusaliile','owm':'Lunea Rusaliilor'},cz:{'01-01':'Nový rok (1)','01-02':'Nový rok (2)','01-24':'Den sjednocení','05-01':'Svátek práce','06-01':'Den dětí','08-15':'Nanebevzetí P. Marie','11-30':'Svátek sv. Ondřeje','12-01':'Národní den','12-25':'1. svátek vánoční','12-26':'2. svátek vánoční','oes':'Pravoslavné Velikonoce','oem':'Prav. Vel. pondělí','opent':'Prav. Letnice','owm':'Prav. Sv. pondělí'},en:{'01-01':"New Year's 1",'01-02':"New Year's 2",'01-24':'Union Day','05-01':'Labour Day','06-01':"Children's Day",'08-15':'Assumption of Mary','11-30':"St. Andrew's Day",'12-01':'National Day','12-25':'Christmas Day','12-26':'2nd Christmas Day','oes':'Orthodox Easter','oem':'Orthodox Easter Monday','opent':'Orthodox Pentecost','owm':'Orthodox Whit Monday'}}};
+function getHN(c,k){return((HN[c]||{})[holLang]||{})[k]||((HN[c]||{}).loc||{})[k]||k;}
+
+var DEFS={
+  en:[{id:1,key:'top_odhad',lbl:'TOP Report – estimate',dl:9,dlEnd:null,color:'#E07820',dep:null,depLbl:null},{id:2,key:'ebt_odhad',lbl:'EBT Report – estimate (group)',dl:10,dlEnd:null,color:'#1A6FA8',dep:'top_odhad',depLbl:'min 1 day after TOP estimate'},{id:3,key:'ctrl',lbl:'Controlling close',dl:18,dlEnd:null,color:'#5B5EA6',dep:null,depLbl:null},{id:4,key:'top_final',lbl:'TOP Report – final',dl:19,dlEnd:null,color:'#C0392B',dep:null,depLbl:null},{id:5,key:'ebt_final',lbl:'EBT Report – final (group)',dl:20,dlEnd:null,color:'#117A65',dep:'top_final',depLbl:'min 1 day after TOP final'},{id:6,key:'review',lbl:'Review meeting',dl:21,dlEnd:5,color:'#2E75B6',dep:null,depLbl:null}],
+  cz:[{id:1,key:'top_odhad',lbl:'TOP Report – odhad',dl:9,dlEnd:null,color:'#E07820',dep:null,depLbl:null},{id:2,key:'ebt_odhad',lbl:'EBT Report – odhad (skupina)',dl:10,dlEnd:null,color:'#1A6FA8',dep:'top_odhad',depLbl:'min 1 den po TOP odhadu'},{id:3,key:'ctrl',lbl:'Controllingová závěrka',dl:18,dlEnd:null,color:'#5B5EA6',dep:null,depLbl:null},{id:4,key:'top_final',lbl:'TOP Report – finále',dl:19,dlEnd:null,color:'#C0392B',dep:null,depLbl:null},{id:5,key:'ebt_final',lbl:'EBT Report – finále (skupina)',dl:20,dlEnd:null,color:'#117A65',dep:'top_final',depLbl:'min 1 den po TOP finále'},{id:6,key:'review',lbl:'Review meeting',dl:21,dlEnd:5,color:'#2E75B6',dep:null,depLbl:null}]
+};
+
+function makeTasks(lang){return DEFS[lang].map(function(d){var t=Object.assign({},d);if(G.labels&&G.labels[d.key]!==undefined)t.lbl=G.labels[d.key];if(G.deadlines&&G.deadlines[d.key]){t.dl=G.deadlines[d.key].dl;t.dlEnd=G.deadlines[d.key].dlEnd;}return t;});}
+function persistLabel(key,lbl){if(!G.labels)G.labels={};G.labels[key]=lbl;sSave(G);}
+function persistDeadline(key,dl,dlEnd){if(!G.deadlines)G.deadlines={};G.deadlines[key]={dl:dl,dlEnd:dlEnd};sSave(G);}
+
+function p2(n){return String(n).padStart(2,'0');}
+function dk(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function addDays(dt,n){var d=new Date(dt);d.setDate(d.getDate()+n);return d;}
+function fmtDate(dt){return p2(dt.getDate())+'.'+p2(dt.getMonth()+1)+'.'+dt.getFullYear();}
+function isEbt(tk){return EBT_KEYS.indexOf(tk.key)>=0;}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
+function sortTasks(){tasks.sort(function(a,b){var da=a.dlEnd!==null?a.dl+.5:a.dl,db=b.dlEnd!==null?b.dl+.5:b.dl;return da-db;});}
+
+function easterW(y){var g=y%19,c=Math.floor(y/100),h=(c-Math.floor(c/4)-Math.floor((8*c+13)/25)+19*g+15)%30,i=h-Math.floor(h/28)*(1-Math.floor(29/(h+1))*Math.floor((21-g)/11)),j=(y+Math.floor(y/4)+i+2-c+Math.floor(c/4))%7,l=i-j,mo=3+Math.floor((l+40)/44),dy=l+28-31*Math.floor(mo/4);return new Date(y,mo-1,dy);}
+function easterO(y){var a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7,mo=Math.floor((d+e+114)/31),dy=(d+e+114)%31+1;return new Date(y,mo-1,dy+13);}
+
+function getHols(y){var s=new Set(),ew=easterW(y),eo=easterO(y);function af(md){var p=md.split('-');s.add(y+'-'+p[0]+'-'+p[1]);}var list=curCountry==='all'?COUNTRIES:[curCountry];list.forEach(function(co){if(co==='cz'){['01-01','05-01','05-08','07-05','07-06','09-28','10-28','11-17','12-24','12-25','12-26'].forEach(af);s.add(dk(addDays(ew,-2)));s.add(dk(addDays(ew,1)));}else if(co==='sk'){['01-01','01-06','05-01','05-08','07-05','08-29','09-01','09-15','11-01','11-17','12-24','12-25','12-26'].forEach(af);s.add(dk(addDays(ew,-2)));s.add(dk(addDays(ew,1)));}else if(co==='pl'){['01-01','01-06','05-01','05-03','08-15','11-01','11-11','12-25','12-26'].forEach(af);s.add(dk(addDays(ew,1)));s.add(dk(addDays(ew,49)));s.add(dk(addDays(ew,60)));}else if(co==='hu'){['01-01','03-15','05-01','08-20','10-23','11-01','12-25','12-26'].forEach(af);s.add(dk(addDays(ew,-2)));s.add(dk(addDays(ew,1)));s.add(dk(addDays(ew,50)));}else if(co==='ro'){['01-01','01-02','01-24','05-01','06-01','08-15','11-30','12-01','12-25','12-26'].forEach(af);s.add(dk(eo));s.add(dk(addDays(eo,1)));s.add(dk(addDays(eo,49)));s.add(dk(addDays(eo,50)));}});return s;}
+function getHolsList(y,co){var ew=easterW(y),eo=easterO(y),r=[];function af(md){var p=md.split('-').map(Number);r.push({date:new Date(y,p[0]-1,p[1]),key:md});}function ad(dt,k){r.push({date:dt,key:k});}if(co==='cz'){['01-01','05-01','05-08','07-05','07-06','09-28','10-28','11-17','12-24','12-25','12-26'].forEach(af);ad(addDays(ew,-2),'gf');ad(addDays(ew,1),'em');}else if(co==='sk'){['01-01','01-06','05-01','05-08','07-05','08-29','09-01','09-15','11-01','11-17','12-24','12-25','12-26'].forEach(af);ad(addDays(ew,-2),'gf');ad(addDays(ew,1),'em');}else if(co==='pl'){['01-01','01-06','05-01','05-03','08-15','11-01','11-11','12-25','12-26'].forEach(af);ad(addDays(ew,1),'em');ad(addDays(ew,49),'pent');ad(addDays(ew,60),'cc');}else if(co==='hu'){['01-01','03-15','05-01','08-20','10-23','11-01','12-25','12-26'].forEach(af);ad(addDays(ew,-2),'gf');ad(addDays(ew,1),'em');ad(addDays(ew,50),'wm');}else if(co==='ro'){['01-01','01-02','01-24','05-01','06-01','08-15','11-30','12-01','12-25','12-26'].forEach(af);ad(eo,'oes');ad(addDays(eo,1),'oem');ad(addDays(eo,49),'opent');ad(addDays(eo,50),'owm');}r.sort(function(a,b){return a.date-b.date;});return r;}
+
+function isNonWork(dt,hols){return dt.getDay()===0||dt.getDay()===6||hols.has(dk(dt));}
+function resolveDL(y,m,day,hols,mode){var o=new Date(y,m-1,day);if(mode==='na')return o;if(!isNonWork(o,hols))return o;if(mode==='pred'){var d=new Date(o);d.setDate(d.getDate()-1);while(isNonWork(d,hols))d.setDate(d.getDate()-1);return d;}var d2=new Date(o);d2.setDate(d2.getDate()+1);while(isNonWork(d2,hols))d2.setDate(d2.getDate()+1);return d2;}
+function nextWD(dt,hols){var d=new Date(dt);d.setDate(d.getDate()+1);while(isNonWork(d,hols))d.setDate(d.getDate()+1);return d;}
+
+function setMode(m,btn){globalMode=m;document.querySelectorAll('#seg-mode button').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');build();}
+function setCountry(c,btn){curCountry=c;document.querySelectorAll('#seg-country button').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');build();}
+function switchLang(lang,btn){curLang=lang;tasks=makeTasks(lang);document.querySelectorAll('#seg-lang button').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');applyLabels();build();}
+function applyLabels(){document.getElementById('lbl-year').textContent=lc('year');document.getElementById('lbl-firms').textContent=lc('firms');document.getElementById('lbl-shift').textContent=lc('shift');document.getElementById('lbl-country').textContent=lc('holidays');document.getElementById('lbl-lang').textContent=lc('lang');document.getElementById('btn-before').textContent=lc('before');document.getElementById('btn-on').textContent=lc('on');document.getElementById('btn-after').textContent=lc('after');document.getElementById('btn-panel').textContent=lc('panelBtn');document.getElementById('btn-holidays').textContent=lc('holBtn');document.getElementById('btn-all-country').textContent=curLang==='cz'?'VŠE':'ALL';}
+
+function openPanel(){editMode=false;renderPanel();document.getElementById('overlay').classList.add('open');}
+function closePanel(){document.getElementById('overlay').classList.remove('open');editMode=false;}
+function renderPanel(){
+  document.getElementById('panel-title').textContent=lc('panelTitle');
+  document.getElementById('panel-sub').textContent=editMode?lc('panelSubEdit'):lc('panelSubView');
+  var body=document.getElementById('panel-body');body.innerHTML='';
+  var foot=document.getElementById('panel-foot');foot.innerHTML='';
+  tasks.forEach(function(tk){
+    var row=document.createElement('div');row.className='task-row'+(isEbt(tk)?' ebt-row':'');
+    var bar=document.createElement('div');bar.className='task-color-bar';bar.style.background=isEbt(tk)?'rgba(255,255,255,.4)':tk.color;
+    var info=document.createElement('div');info.className='task-info';
+    var right=document.createElement('div');right.className='task-right';
+    var del=document.createElement('button');del.className='del-btn';del.textContent='✕';del.style.display=editMode?'':'none';
+    (function(id){del.onclick=function(){tasks=tasks.filter(function(x){return x.id!==id;});renderPanel();build();};})(tk.id);
+    if(editMode){
+      var ni=document.createElement('input');ni.type='text';ni.value=tk.lbl;
+      (function(t){ni.oninput=function(e){t.lbl=e.target.value;persistLabel(t.key,e.target.value);};})(tk);
+      info.appendChild(ni);
+      if(tk.depLbl)info.appendChild(el('div','task-info-sub','⚑ '+tk.depLbl));
+      if(tk.dlEnd!==null){
+        var i1=document.createElement('input');i1.type='number';i1.min=1;i1.max=28;i1.value=tk.dl;
+        (function(t){i1.oninput=function(e){t.dl=Math.max(1,Math.min(28,parseInt(e.target.value)||t.dl));persistDeadline(t.key,t.dl,t.dlEnd);};})(tk);
+        var spt=el('span','sep-txt','–');
+        var i2=document.createElement('input');i2.type='number';i2.min=1;i2.max=28;i2.value=tk.dlEnd;
+        (function(t){i2.oninput=function(e){t.dlEnd=Math.max(1,Math.min(28,parseInt(e.target.value)||t.dlEnd));persistDeadline(t.key,t.dl,t.dlEnd);};})(tk);
+        right.appendChild(i1);right.appendChild(spt);right.appendChild(i2);right.appendChild(el('span','unit',lc('day')));
+      }else{
+        var ni2=document.createElement('input');ni2.type='number';ni2.min=1;ni2.max=28;ni2.value=tk.dl;
+        (function(t){ni2.oninput=function(e){t.dl=Math.max(1,Math.min(28,parseInt(e.target.value)||t.dl));persistDeadline(t.key,t.dl,t.dlEnd);};})(tk);
+        right.appendChild(ni2);right.appendChild(el('span','unit',lc('day')));
+      }
+    }else{
+      info.appendChild(el('div','task-info-name',tk.lbl));
+      info.appendChild(el('div','task-info-sub',tk.depLbl?'⚑ '+tk.depLbl:lc('noDepLbl')));
+      if(tk.dlEnd!==null){right.appendChild(el('span','dl-val',tk.dl+'. – '+tk.dlEnd+'.'));right.appendChild(el('span','unit',lc('day')));}
+      else{right.appendChild(el('span','dl-val',tk.dl+'.'));right.appendChild(el('span','unit',lc('day')));}
+    }
+    row.appendChild(bar);row.appendChild(info);row.appendChild(right);row.appendChild(del);body.appendChild(row);
+  });
+  if(editMode){var ab=document.createElement('button');ab.className='add-btn';ab.innerHTML='<span style="font-size:18px;line-height:1;color:#2E75B6">+</span> '+lc('addTask');ab.onclick=function(){var id=nextId++;tasks.push({id:id,key:'custom_'+id,lbl:lc('newTask'),dl:15,dlEnd:null,color:'#888888',dep:null,depLbl:null});sortTasks();renderPanel();};body.appendChild(ab);}
+  if(!editMode){var eb=el('button','btn-edit',lc('edit'));eb.onclick=function(){editMode=true;renderPanel();};var cb=el('button','btn-cancel',lc('close'));cb.onclick=closePanel;foot.appendChild(eb);foot.appendChild(cb);}
+  else{var sb=el('button','btn-apply',lc('save'));sb.onclick=function(){sortTasks();editMode=false;renderPanel();build();};var cb2=el('button','btn-cancel',lc('cancel'));cb2.onclick=closePanel;foot.appendChild(cb2);foot.appendChild(sb);}
+}
+
+function openHolidays(){holLang='loc';renderHolidays();document.getElementById('hol-overlay').classList.add('open');}
+function closeHolidays(){document.getElementById('hol-overlay').classList.remove('open');}
+function renderHolidays(){
+  var yr=parseInt(document.getElementById('yr').value)||2026;
+  document.getElementById('hol-title').textContent=lc('holTitle')+' '+yr;
+  document.getElementById('hol-sub').textContent=lc('holSub');
+  document.getElementById('hol-close-btn').textContent=lc('close');
+  var sw=document.getElementById('hol-switcher');sw.innerHTML='';
+  sw.appendChild(el('span','',lc('holNames')));
+  ['loc','cz','en'].forEach(function(l){var btn=document.createElement('button');btn.className='hol-sw-btn'+(holLang===l?' active':'');btn.textContent=l==='loc'?'LOC':l.toUpperCase();(function(lang){btn.onclick=function(){holLang=lang;renderHolidays();};})(l);sw.appendChild(btn);});
+  var allH={};COUNTRIES.forEach(function(c){allH[c]=getHolsList(yr,c);});
+  var seen={},dates=[];COUNTRIES.forEach(function(c){allH[c].forEach(function(h){var k=dk(h.date);if(!seen[k]){seen[k]=1;dates.push(k);}});});dates.sort();
+  var days=TR[curLang].days;
+  var html='<div style="overflow-x:auto;padding:0 24px 16px"><table style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr>';
+  html+='<th style="background:#1F3864;color:white;padding:8px 10px;text-align:left;font-size:11px;white-space:nowrap;position:sticky;left:0;z-index:2">'+lc('holDate')+'</th>';
+  html+='<th style="background:#1F3864;color:#9DC3E6;padding:8px 6px;font-size:11px;min-width:38px">'+lc('holDay')+'</th>';
+  COUNTRIES.forEach(function(c){var cn=holLang==='cz'?CNAMES[c].cz:holLang==='en'?CNAMES[c].en:CNAMES[c].loc;html+='<th style="background:#1F3864;color:white;padding:8px 10px;font-size:11px;white-space:nowrap;min-width:150px">'+FLAGS[c]+' '+cn+'</th>';});
+  html+='</tr></thead><tbody>';
+  dates.forEach(function(dk2,ri){var dt=new Date(dk2),isWE=dt.getDay()===0||dt.getDay()===6,bg=isWE?'#F0F0F0':ri%2===0?'#FFF':'#F8FBFF';html+='<tr><td style="background:'+bg+';padding:7px 10px;border-bottom:1px solid #E8EFF7;font-weight:600;white-space:nowrap;position:sticky;left:0;z-index:1">'+fmtDate(dt)+'</td><td style="background:'+bg+';padding:7px 6px;border-bottom:1px solid #E8EFF7;text-align:center;color:'+(isWE?'#C0392B':'#555')+';font-weight:'+(isWE?700:400)+'">'+days[dt.getDay()]+'</td>';COUNTRIES.forEach(function(c){var hol=null;for(var i=0;i<allH[c].length;i++){if(dk(allH[c][i].date)===dk2){hol=allH[c][i];break;}}html+=hol?'<td style="background:'+bg+';padding:7px 10px;border-bottom:1px solid #E8EFF7;border-left:1px solid #EEF2F8;color:#1F3864;font-weight:500">'+getHN(c,hol.key)+'</td>':'<td style="background:'+bg+';padding:7px 10px;border-bottom:1px solid #E8EFF7;border-left:1px solid #EEF2F8;color:#ccc">–</td>';});html+='</tr>';});
+  html+='</tbody></table></div>';document.getElementById('hol-body').innerHTML=html;
+}
+
+function build(){
+  var yr=parseInt(document.getElementById('yr').value)||2026,hols=getHols(yr),MAX=31;
+  var months=TR[curLang].months,days=TR[curLang].days;
+  var leg=document.getElementById('leg');
+  leg.innerHTML=tasks.map(function(tk){return'<div class="leg"><div class="ldot" style="background:'+(isEbt(tk)?'#FADBD8;border:1px solid #C0392B':tk.color)+'"></div>'+tk.lbl+'</div>';}).join('')+'<div class="leg"><div class="ldot" style="background:#C8DFF5;border:1px solid #aac"></div>'+lc('legendReview')+'</div><div class="leg"><div class="ldot" style="background:#E3E3E3;border:1px solid #bbb"></div>'+lc('legendWeekend')+'</div><div class="leg"><div class="ldot" style="background:#FFE0E0;border:1px solid #f99"></div>'+lc('legendHoliday')+'</div>';
+  var cg=document.getElementById('cg');cg.innerHTML='';['c-month','c-task','c-comp','c-term'].forEach(function(c){var col=document.createElement('col');col.className=c;cg.appendChild(col);});for(var i=0;i<MAX;i++){var col=document.createElement('col');col.className='c-day';cg.appendChild(col);}
+  var thead=document.getElementById('thead');thead.innerHTML='';
+  var tr1=el('tr');tr1.appendChild(el('th','c-month h-daynum',lc('colMonth')));tr1.appendChild(el('th','c-task h-daynum',lc('colTask')));tr1.appendChild(el('th','c-comp h-daynum',lc('colComp')));tr1.appendChild(el('th','c-term h-daynum',lc('colDeadline')));
+  for(var d=1;d<=MAX;d++){var th=el('th','h-daynum');th.textContent=d;tr1.appendChild(th);}thead.appendChild(tr1);
+  var tr2=el('tr');['c-month h-dayname','c-task h-dayname','c-comp h-dayname','c-term h-dayname'].forEach(function(c){tr2.appendChild(el('th',c,''));});for(var d2=1;d2<=MAX;d2++)tr2.appendChild(el('th','h-dayname',''));thead.appendChild(tr2);
+  var tbody=document.getElementById('tbody');tbody.innerHTML='';
+  for(var m=1;m<=12;m++){
+    var dim=new Date(yr,m,0).getDate(),nextM=m===12?1:m+1;
+    var dayInfo=[];for(var d3=1;d3<=MAX;d3++){if(d3<=dim){var dt=new Date(yr,m-1,d3);dayInfo.push({d:d3,isWE:dt.getDay()===0||dt.getDay()===6,isHol:hols.has(dk(dt)),exists:true,dn:days[dt.getDay()]});}else dayInfo.push({d:d3,exists:false});}
+    var resolved={};tasks.forEach(function(tk){if(tk.dlEnd===null){var rdt=resolveDL(yr,m,tk.dl,hols,globalMode),depShifted=false;if(tk.dep&&resolved[tk.dep]){var minRdt=nextWD(resolved[tk.dep].rdt,hols);if(rdt<=resolved[tk.dep].rdt){rdt=minRdt;depShifted=true;}}resolved[tk.key]={day:rdt.getDate(),rdt:rdt,origIsNW:isNonWork(new Date(yr,m-1,tk.dl),hols),depShifted:depShifted};}});
+    var mhdr=el('tr','mhdr');var tdmh=el('td','c-month');tdmh.textContent=months[m-1].toUpperCase();mhdr.appendChild(tdmh);mhdr.appendChild(el('td','c-task',''));mhdr.appendChild(el('td','c-comp',''));mhdr.appendChild(el('td','c-term',''));
+    dayInfo.forEach(function(info){var td=el('td');if(!info.exists)td.className='no-day';else{td.className=info.isHol?'hol-d':info.isWE?'we-d':'';td.textContent=info.dn;td.style.cssText='font-size:9px;text-align:center;color:'+(info.isHol?'#FFAAAA':info.isWE?'#8FA8C8':'#9DC3E6');}mhdr.appendChild(td);});tbody.appendChild(mhdr);
+    tasks.forEach(function(tk,ti){
+      var ebt=isEbt(tk);var tr=el('tr','trow'+(ebt?' ebt-trow':ti%2?' odd':''));
+      if(ti===0){var tdM=el('td','c-month');tdM.rowSpan=tasks.length;tdM.textContent=months[m-1];tr.appendChild(tdM);}
+      var tdN=el('td','c-task');tdN.style.borderLeftColor=ebt?'#C0392B':tk.color;tdN.innerHTML='<span style="color:'+(ebt?'#C0392B':tk.color)+';margin-right:5px;font-size:13px">●</span><span style="color:#111;font-size:13px;font-weight:600">'+tk.lbl+'</span>';tr.appendChild(tdN);
+      var tdC=el('td','c-comp',ebt?lc('compGroup'):lc('compLocal'));tdC.style.color=ebt?'#C0392B':'#555';tr.appendChild(tdC);
+      var tdT=el('td','c-term'),tc=ebt?'#C0392B':tk.color;
+      if(tk.dlEnd!==null){tdT.textContent=p2(tk.dl)+'.'+p2(m)+'. – '+p2(tk.dlEnd)+'.'+p2(nextM)+'.';tdT.style.cssText='color:'+tc+';font-weight:700;font-size:13px;';}
+      else{var res=resolved[tk.key],rdt2=res.rdt,s=p2(rdt2.getDate())+'.'+p2(m)+'.'+yr+' '+days[rdt2.getDay()];if(res.depShifted)s+=' ⚑';else if(res.origIsNW&&globalMode!=='na')s+=globalMode==='pred'?' ←':' →';tdT.textContent=s;tdT.style.cssText='color:'+tc+';font-weight:700;font-size:13px;'+(res.depShifted?'text-decoration:underline;':'')+(res.origIsNW&&globalMode==='na'?'text-decoration:underline dotted;':'');}
+      tr.appendChild(tdT);
+      dayInfo.forEach(function(info){var td=el('td');if(!info.exists)td.className='no-day';else{if(info.isHol)td.className='hol-d';else if(info.isWE)td.className='we-d';if(tk.dlEnd!==null){if(info.d>=tk.dl||info.d<=tk.dlEnd)td.className='review-bg';}else{var res2=resolved[tk.key];if(info.d===res2.day){td.textContent='';var sp=document.createElement('span');sp.className=res2.depShifted?'dlmark-dep':globalMode==='na'?'dlmark-exact':res2.origIsNW?'dlmark-shift':'dlmark';sp.style.background=ebt?'#C0392B':tk.color;sp.style.color='white';sp.textContent=info.d;td.appendChild(sp);}}}tr.appendChild(td);});
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// ── Startup ───────────────────────────────────────────────────
+sLoad(function(stored){
+  G=stored||{};
+  if(!G.labels)G.labels={};
+  if(!G.deadlines)G.deadlines={};
+  tasks=makeTasks(curLang);
+  applyLabels();
+  build();
+});
+</script>
+</body>
+</html>
