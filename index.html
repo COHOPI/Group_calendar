@@ -119,14 +119,14 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
 .trk-table{border-collapse:collapse;font-size:12px;width:max-content;min-width:100%}
 .trk-table th{background:#1F3864;color:white;padding:7px 10px;text-align:center;font-size:11px;font-weight:600;white-space:nowrap;border-right:1px solid #2E4F7A;position:sticky;z-index:10}
 .trk-table thead tr:first-child th{top:0}.trk-table thead tr:last-child th{top:30px}
-.trk-table th.th-firm{text-align:left;padding-left:12px;position:sticky;left:0;z-index:15;min-width:120px}
-.trk-table th.th-task{text-align:left;padding-left:10px;position:sticky;left:120px;z-index:15;min-width:150px}
+.trk-table th.th-firm{text-align:left;padding-left:12px;position:sticky;left:0;z-index:15;min-width:150px}
+.trk-table th.th-task{text-align:left;padding-left:10px;position:sticky;left:150px;z-index:15;min-width:190px}
 .trk-table th.th-yr{background:#253C60;border-right:2px solid #1A3050}
 .trk-table th.th-yr-prev{background:#1A3050}
 .trk-table th.th-sum{background:#152849;min-width:60px;border-left:2px solid #0D1E38}
 .trk-table td{border-bottom:1px solid #E4EBF5;border-right:1px solid #E4EBF5;padding:0;vertical-align:middle;background:white}
-.trk-table td.td-firm{position:sticky;left:0;z-index:5;background:#F0F4FA;font-size:11px;font-weight:700;color:#1F3864;padding:5px 8px 5px 10px;white-space:nowrap;border-right:2px solid #D0DCF0;min-width:120px}
-.trk-table td.td-task{position:sticky;left:120px;z-index:5;background:#F8FAFF;font-size:11px;color:#333;padding:5px 6px 5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;border-right:2px solid #D0DCF0}
+.trk-table td.td-firm{position:sticky;left:0;z-index:5;background:#F0F4FA;font-size:14px;font-weight:700;color:#1F3864;padding:5px 8px 5px 10px;white-space:nowrap;border-right:2px solid #D0DCF0;min-width:150px}
+.trk-table td.td-task{position:sticky;left:150px;z-index:5;background:#F8FAFF;font-size:13px;color:#333;padding:5px 6px 5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px;border-right:2px solid #D0DCF0}
 .trk-table tr.tr-odd td.td-firm{background:#EBF0FA}.trk-table tr.tr-odd td.td-task{background:#F2F5FF}
 .trk-table tr:hover td{background:#EBF3FF !important}
 .trk-table tr.tr-sum td{background:#1F3864 !important;color:white !important;font-weight:700;font-size:11px}
@@ -197,7 +197,6 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
 <body>
 
 <div class="topbar">
-  <!-- ROW 1: logo · název · navigace -->
   <div class="topbar-row topbar-row1">
     <div style="display:flex;align-items:center;flex-shrink:0;height:46px;border-radius:5px;overflow:hidden;background:white;padding:2px 6px">
       <svg viewBox="0 0 234 230" width="68" height="40" xmlns="http://www.w3.org/2000/svg">
@@ -226,7 +225,7 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
       </button>
     </div>
   </div>
-  <!-- ROW 2: Calendar controls + Language -->
+  <!-- ROW 2: Calendar controls -->
   <div class="topbar-row" id="cal-ctrl">
     <div><label id="lbl-year">Year</label><input type="number" id="yr" value="2026" min="2024" max="2035" onchange="build()"></div>
     <div><label id="lbl-firms">Companies</label><input type="number" id="fc" value="30" min="1" max="999" onchange="syncFirmCount()"></div>
@@ -243,9 +242,9 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
     <div class="vsep"></div>
     <span id="lbl-shift" style="font-size:11px;color:#9DC3E6">Shift:</span>
     <div class="seg" id="seg-mode">
-      <button id="mode-btn-pred" onclick="setMode('pred')"><span id="lbl-before">Before</span></button>
-      <button id="mode-btn-na" onclick="setMode('na')"><span id="lbl-on">On</span></button>
-      <button id="mode-btn-po" onclick="setMode('po')"><span id="lbl-after">After</span></button>
+      <button id="mode-btn-pred" onclick="setCalMode('pred',this)"><span id="lbl-before">Before</span></button>
+      <button id="mode-btn-na" onclick="setCalMode('na',this)"><span id="lbl-on">On</span></button>
+      <button id="mode-btn-po" onclick="setCalMode('po',this)"><span id="lbl-after">After</span></button>
     </div>
     <div class="vsep"></div>
     <button id="btn-panel" class="tbtn" onclick="openTaskPanel()">📋 Task overview – deadlines</button>
@@ -258,12 +257,20 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
       <button id="lang-cz" onclick="switchLang('cz',this)">CZ</button>
     </div>
   </div>
-  <!-- ROW 2: Tracking controls + Language -->
+  <!-- ROW 2: Tracking controls — vlastní nezávislý Shift -->
   <div class="topbar-row" id="trk-ctrl" style="display:none">
     <button class="tbtn" onclick="openFirms()">🏢 <span id="lbl-btn-firms">Manage companies</span></button>
     <button class="tbtn" onclick="resetFirms()" style="border-color:#F5B7B1;color:#E74C3C">↺ Reset</button>
     <button class="tbtn" onclick="doSeed()" style="border-color:#A9CCE3;color:#2471A3">🎲 Demo data</button>
     <span id="seed-status" style="font-size:11px;color:#9DC3E6"></span>
+    <div class="vsep"></div>
+    <span id="lbl-shift-trk" style="font-size:11px;color:#9DC3E6">Shift – simulation:</span>
+    <!-- label set directly, not via applyLabels -->
+    <div class="seg" id="seg-mode-trk">
+      <button id="trk-btn-pred" onclick="setTrkMode('pred',this)"><span id="lbl-trk-before">Before</span></button>
+      <button id="trk-btn-na"   onclick="setTrkMode('na',this)"><span id="lbl-trk-on">On</span></button>
+      <button id="trk-btn-po"   onclick="setTrkMode('po',this)"><span id="lbl-trk-after">After</span></button>
+    </div>
     <div class="vsep"></div>
     <span style="font-size:11px;color:#9DC3E6">Language:</span>
     <div class="seg" id="seg-lang-trk">
@@ -299,7 +306,6 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
       <table id="tbl"><colgroup id="cg"></colgroup><thead id="thead"></thead><tbody id="tbody"></tbody></table>
     </div>
     <div class="sb" id="sidebar">
-      <!-- Upcoming Tasks -->
       <div class="sb-section">
         <div class="sb-section-head">
           <div class="sb-title" id="sb-up-title">Upcoming Tasks</div>
@@ -312,7 +318,6 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
         </div>
         <div id="sb-up-body"></div>
       </div>
-      <!-- Exchange Rates -->
       <div class="sb-section" style="border-top:3px solid #5BA3E0;margin-top:10px;padding-top:4px">
         <div class="sb-section-head">
           <div class="sb-title" id="sb-fx-title">Exchange Rates</div>
@@ -371,14 +376,12 @@ td.review-bg{background:#C8DFF5 !important}tr.trow.odd td.review-bg{background:#
 </div>
 
 <script>
-// ── colours ───────────────────────────────────────────────────────────────────
 var C_OK='#27AE60',C_LATE='#C0392B',C_NONE='#BDC3C7';
 var C_HI='#27AE60',C_MID='#B7770D',C_LO='#C0392B',C_NA='#BDC3C7';
 function mkBadge(bg,t){return '<span class="badge" style="background:'+bg+';color:white">'+t+'</span>';}
 function mkGrey(t){return '<span class="badge" style="background:'+C_NONE+';color:#555">'+t+'</span>';}
 function mkPct(p){if(p===null)return '<span class="pct" style="background:'+C_NA+';color:#555">–</span>';var c=p>=90?C_HI:p>=60?C_MID:C_LO;return '<span class="pct" style="background:'+c+';color:white">'+p+'%</span>';}
 
-// ── button activation (inline styles override CSS) ────────────────────────────
 function activateBtn(btn,bgA,clA,bgI,clI){
   var seg=btn.closest('.seg');if(!seg)return;
   seg.querySelectorAll('button').forEach(function(b){
@@ -396,7 +399,6 @@ function activatePageBtn(btn){
   });
 }
 function activateSmall(btn){activateBtn(btn,'#F0A500','#1F3864','#2A4668','#8ABADD');}
-function activateLang(btn){activateBtn(btn,'#2D8B3A','white','#2A4668','#8ABADD');}
 function activateDecId(id,sel){
   document.querySelectorAll(sel+' .dec-btn').forEach(function(b){
     var a=(b.id===id);
@@ -404,7 +406,6 @@ function activateDecId(id,sel){
   });
 }
 
-// ── data defaults ─────────────────────────────────────────────────────────────
 var DEFAULT_FIRMS=["H_CZ","H_FH","H_CZ_FS","H_SK","H_HU","H_PL","H_RO","H_GS_CZ","H_GS_SK","H_GS_HU","H_GS_PL","H_GS_RO","H_GS_HR","H_GS_BG","HOLL","FD_CZ","FD_DE","IN_LAB","Fut_EAT_P","CIB_B","P_PROD","P_CHEF","FOTR","FMAL","H_HO","H_LOG","H_RE_CZ","H_PR","SOLEN","H_EN_CZ"];
 var DEFAULT_FX={"2025":{"CZK":{"EUR":25.185,"HUF":0.061225234,"PLN":5.8912280702,"RON":5.0630239431},"EUR":{"CZK":0.0397061743,"HUF":0.0024310198,"PLN":0.2339181287,"RON":0.2010333112}},"2026":{"CZK":{"EUR":24.237,"HUF":0.0629287291,"PLN":5.7420042644,"RON":4.7553366818},"EUR":{"CZK":0.0412592318,"HUF":0.0025963910,"PLN":0.2369106847,"RON":0.1962015382}}};
 var SK='gc_labels_v2',SK_TRK='gc_tracking_v1',SK_FIRMS='gc_firms_v1',SK_PICK='gc_trkpick_v1',SK_FX='gc_fx_v1';
@@ -416,7 +417,10 @@ function pickSave(){try{localStorage.setItem(SK_PICK,JSON.stringify(G.pick));}ca
 function fxSave(){try{localStorage.setItem(SK_FX,JSON.stringify(G.fx));}catch(e){}}
 
 var G={labels:{},deadlines:{},tracking:{},firms:[],pick:{},fx:{}};
-var tasks=[],curLang='en',curCountry='cz',holLang='loc',editMode=false,globalMode='pred',nextId=10,curPage='calendar',trkView='2y',dpState=null,fxEditMode=false,fxDec=3,upFilter='month';
+// ── dva nezávislé shift módy ──────────────────────────────────────────────────
+var globalMode='pred';   // Calendar
+var trkMode='pred';      // Tracking — nezávislý
+var tasks=[],curLang='en',curCountry='cz',holLang='loc',editMode=false,nextId=10,curPage='calendar',trkView='2y',dpState=null,fxEditMode=false,fxDec=3,upFilter='month';
 var EBT_KEYS=['ebt_odhad','ebt_final'],COUNTRIES=['cz','sk','pl','hu','ro'];
 var FLAGS={cz:'🇨🇿',sk:'🇸🇰',pl:'🇵🇱',hu:'🇭🇺',ro:'🇷🇴'};
 
@@ -479,10 +483,13 @@ function resolveDL(y,m,day,hols,mode){
   var d2=new Date(o);d2.setDate(d2.getDate()+1);while(isNonWork(d2,hols))d2.setDate(d2.getDate()+1);return d2;
 }
 function nextWD(dt,hols){var d=new Date(dt);d.setDate(d.getDate()+1);while(isNonWork(d,hols))d.setDate(d.getDate()+1);return d;}
-function getResolvedDL(yr,m,tk){
+
+// mode je parametr — Calendar předává globalMode, Tracking předává trkMode
+function getResolvedDL(yr,m,tk,mode){
+  if(mode===undefined)mode=globalMode;
   if(!tk||tk.dlEnd!==null)return null;
-  var hols=getHols(yr);var rdt=resolveDL(yr,m,tk.dl,hols,globalMode);
-  if(tk.dep){for(var i=0;i<tasks.length;i++){if(tasks[i].key===tk.dep&&tasks[i].dlEnd===null){var dr=resolveDL(yr,m,tasks[i].dl,hols,globalMode);if(rdt<=dr)rdt=nextWD(dr,hols);break;}}}
+  var hols=getHols(yr);var rdt=resolveDL(yr,m,tk.dl,hols,mode);
+  if(tk.dep){for(var i=0;i<tasks.length;i++){if(tasks[i].key===tk.dep&&tasks[i].dlEnd===null){var dr=resolveDL(yr,m,tasks[i].dl,hols,mode);if(rdt<=dr)rdt=nextWD(dr,hols);break;}}}
   return rdt;
 }
 function evalEntry(stored,dlDt){
@@ -492,11 +499,17 @@ function evalEntry(stored,dlDt){
   return diff<=0?{st:'ok'}:{st:'late',days:diff};
 }
 
-// ── mode / page / lang / country ──────────────────────────────────────────────
-function setMode(m){
-  globalMode=m;activateSmall(document.getElementById('mode-btn-'+m));
+// ── Calendar Shift ────────────────────────────────────────────────────────────
+function setCalMode(m,btn){
+  globalMode=m;activateSmall(btn);
   build();if(curPage==='tracking')renderTracking();
 }
+// ── Tracking Shift (nezávislý) ────────────────────────────────────────────────
+function setTrkMode(m,btn){
+  trkMode=m;activateSmall(btn);
+  renderTracking();
+}
+
 function switchPage(page,btn){
   curPage=page;activatePageBtn(btn);
   document.getElementById('page-calendar').style.display=page==='calendar'?'block':'none';
@@ -511,7 +524,6 @@ function setCountry(c,btn){curCountry=c;activateSmall(btn);build();if(curPage===
 function setTrkView(v,btn){trkView=v;activateSmall(btn);renderTracking();}
 function switchLang(lang,btn){
   curLang=lang;tasks=makeTasks(lang);
-  // sync both lang segs
   ['lang-en','lang-cz','lang-en-trk','lang-cz-trk'].forEach(function(id){
     var b=document.getElementById(id);if(!b)return;
     var isActive=(id==='lang-'+lang||id==='lang-'+lang+'-trk');
@@ -527,12 +539,15 @@ function switchLang(lang,btn){
 function applyLabels(){
   var m={year:'lbl-year',firms:'lbl-firms',shift:'lbl-shift',before:'lbl-before',on:'lbl-on',after:'lbl-after',holidays:'lbl-country',lang:'lbl-lang',panelBtn:'btn-panel',holBtn:'btn-holidays',pgCal:'lbl-pg-cal',pgTrk:'lbl-pg-trk',pgFx:'lbl-pg-fx',btnFirms:'lbl-btn-firms',trkYear:'lbl-trk-year',trkView:'lbl-trk-view',view2y:'lbl-view-2y',view1y:'lbl-view-1y',dpClear:'dp-clear-lbl',dpCancel:'dp-cancel-lbl',dpOk:'dp-ok-lbl',fxYear:'fx-lbl-year',fxBase:'fx-lbl-base',fxAddPair:'fx-lbl-add-pair',fxAddYear:'fx-lbl-add-year',sbFxTitle:'sb-fx-title',sbUpTitle:'sb-up-title',sbEditLink:'sb-fx-link',sbDecimals:'sb-dec-lbl',upfWeek:'lbl-upf-week',upfNextweek:'lbl-upf-nextweek',upfMonth:'lbl-upf-month'};
   Object.keys(m).forEach(function(k){var e=document.getElementById(m[k]);if(e)e.textContent=lc(k);});
+  // Tracking shift labels (vlastní překlady)
+  var trkShift={before:'lbl-trk-before',on:'lbl-trk-on',after:'lbl-trk-after'};
+  Object.keys(trkShift).forEach(function(k){var e=document.getElementById(trkShift[k]);if(e)e.textContent=lc(k);});
+  var stl=document.getElementById('lbl-shift-trk');if(stl)stl.textContent='Shift \u2013 simulation:';
   document.getElementById('btn-all-country').textContent=curLang==='cz'?'VŠE':'ALL';
   document.getElementById('fx-edit-lbl').textContent=fxEditMode?lc('fxSave'):lc('fxEdit');
   updatePickerBtn();
 }
 
-// ── sidebar ───────────────────────────────────────────────────────────────────
 function setDec(n){fxDec=n;activateDecId('dec-'+n,'#sidebar');renderSidebar();}
 function setUpFilter(f){upFilter=f;activateDecId('upf-'+f,'#upf-btns');renderSidebar();}
 
@@ -541,7 +556,6 @@ function renderSidebar(){
   var today=new Date(),todayY=today.getFullYear(),todayM=today.getMonth()+1,todayD=today.getDate();
   var todayDate=new Date(todayY,todayM-1,todayD);
   var days=TR[curLang].days;
-  // Upcoming
   document.getElementById('sb-up-title').textContent=lc('sbUpTitle');
   var rFrom,rTo;
   if(upFilter==='week'){var dow=todayDate.getDay()===0?6:todayDate.getDay()-1;rFrom=new Date(todayDate);rFrom.setDate(todayD-dow);rTo=new Date(rFrom);rTo.setDate(rFrom.getDate()+6);}
@@ -551,13 +565,12 @@ function renderSidebar(){
   var subTxt=upFilter==='month'?(TR[curLang].months[rFrom.getMonth()]+' '+yr):(p2(rFrom.getDate())+'.'+p2(rFrom.getMonth()+1)+'. – '+p2(rTo.getDate())+'.'+p2(rTo.getMonth()+1)+'.');
   document.getElementById('sb-up-sub').textContent=subTxt;
   var upcoming=[];
-  for(var sm=1;sm<=12;sm++){if(new Date(yr,sm-1,1)>rTo||new Date(yr,sm,0)<rFrom)continue;tasks.forEach(function(tk){if(tk.dlEnd!==null)return;var dlDt=getResolvedDL(yr,sm,tk);if(!dlDt)return;if(dlDt>=rFrom&&dlDt<=rTo)upcoming.push({tk:tk,dlDt:dlDt});});}
+  for(var sm=1;sm<=12;sm++){if(new Date(yr,sm-1,1)>rTo||new Date(yr,sm,0)<rFrom)continue;tasks.forEach(function(tk){if(tk.dlEnd!==null)return;var dlDt=getResolvedDL(yr,sm,tk,globalMode);if(!dlDt)return;if(dlDt>=rFrom&&dlDt<=rTo)upcoming.push({tk:tk,dlDt:dlDt});});}
   upcoming.sort(function(a,b){return a.dlDt-b.dlDt;});
   var upH='';
   if(!upcoming.length){upH='<div style="padding:8px 12px;font-size:10px;color:#3A5F8A">'+lc('sbNoUpcoming')+'</div>';}
   else{upcoming.forEach(function(item){var dlDt=item.dlDt,tk=item.tk;var dlStr=p2(dlDt.getDate())+'.'+p2(dlDt.getMonth()+1)+'. '+days[dlDt.getDay()];var dL=Math.round((new Date(dlDt.getFullYear(),dlDt.getMonth(),dlDt.getDate())-todayDate)/86400000);var dc=yr!==todayY?'#5BA3E0':dL<=1?'#E74C3C':dL<=3?'#E67E22':'#27AE60';upH+='<div class="sb-task-row"><div style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+tk.color+';flex-shrink:0"></span><span class="sb-task-name">'+esc(tk.lbl)+'</span></div><div class="sb-task-date" style="color:'+dc+'">'+dlStr+'</div></div>';});}
   document.getElementById('sb-up-body').innerHTML=upH;
-  // FX
   document.getElementById('sb-fx-title').textContent=lc('sbFxTitle');
   document.getElementById('sb-fx-yr').textContent=yrStr;
   document.getElementById('sb-dec-lbl').textContent=lc('sbDecimals');
@@ -569,7 +582,6 @@ function renderSidebar(){
   document.getElementById('sb-fx-link').textContent=lc('sbEditLink');
 }
 
-// ── task panel ────────────────────────────────────────────────────────────────
 function openTaskPanel(){editMode=false;renderTaskPanel();document.getElementById('ov-tasks').classList.add('open');}
 function closeTaskPanel(){document.getElementById('ov-tasks').classList.remove('open');editMode=false;}
 function renderTaskPanel(){
@@ -609,7 +621,6 @@ function renderTaskPanel(){
   else{var sb=el('button','btn-apply',lc('save'));sb.onclick=function(){sortTasks();editMode=false;renderTaskPanel();build();};var cb2=el('button','btn-cancel',lc('cancel'));cb2.onclick=closeTaskPanel;foot.appendChild(cb2);foot.appendChild(sb);}
 }
 
-// ── holidays ──────────────────────────────────────────────────────────────────
 function openHolidays(){holLang='loc';renderHolidays();document.getElementById('ov-hol').classList.add('open');}
 function closeHolidays(){document.getElementById('ov-hol').classList.remove('open');}
 function renderHolidays(){
@@ -630,7 +641,6 @@ function renderHolidays(){
   html+='</tbody></table></div>';document.getElementById('hol-body').innerHTML=html;
 }
 
-// ── firms ─────────────────────────────────────────────────────────────────────
 function getFirmCount(){return parseInt(document.getElementById('fc').value)||30;}
 function ensureFirms(){var n=getFirmCount();while(G.firms.length<n)G.firms.push(DEFAULT_FIRMS[G.firms.length]||('Company '+(G.firms.length+1)));}
 function syncFirmCount(){ensureFirms();if(curPage==='tracking')renderTracking();}
@@ -665,7 +675,6 @@ function saveFirms(){
   document.getElementById('fc').value=G.firms.length;firmsSave();_firmsTmp=null;closeFirms();renderTracking();
 }
 
-// ── picker ────────────────────────────────────────────────────────────────────
 function getPickedTasks(){var elig=tasks.filter(function(tk){return tk.dlEnd===null;});var hasAny=Object.keys(G.pick).length>0;if(!hasAny)return elig;return elig.filter(function(tk){return G.pick[tk.key]!==false;});}
 function updatePickerBtn(){var elig=tasks.filter(function(tk){return tk.dlEnd===null;});var act=getPickedTasks();document.getElementById('lbl-picker-btn').textContent=lc('pickerBtn')+(elig.length?' ('+act.length+'/'+elig.length+')':'');}
 function openPicker(){
@@ -681,7 +690,6 @@ function openPicker(){
 function closePicker(){document.getElementById('ov-picker').classList.remove('open');}
 function confirmPicker(){document.getElementById('picker-body').querySelectorAll('input[type=checkbox]').forEach(function(cb){G.pick[cb.dataset.key]=cb.checked;});pickSave();closePicker();updatePickerBtn();renderTracking();}
 
-// ── tracking ──────────────────────────────────────────────────────────────────
 function trkKey(yr,m,key,fi){return yr+'_'+m+'_'+key+'_'+fi;}
 function trkGet(yr,m,key,fi){return G.tracking[trkKey(yr,m,key,fi)]||'';}
 function trkSet(yr,m,key,fi,v){G.tracking[trkKey(yr,m,key,fi)]=v;trkSave();}
@@ -704,23 +712,23 @@ function renderTracking(){
       var odd=rowIdx%2===1,isLast=(ti===showTasks.length-1);rowIdx++;
       h+='<tr class="'+(odd?'tr-odd':'')+'" style="'+(isLast?'border-bottom:2px solid #A0B8D8':'')+'">';
       if(ti===0)h+='<td class="td-firm" rowspan="'+showTasks.length+'" style="border-bottom:2px solid #A0B8D8">'+esc(firmName)+'</td>';
-      h+='<td class="td-task"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+tk.color+';margin-right:4px;vertical-align:middle"></span>'+esc(tk.lbl)+'</td>';
+      h+='<td class="td-task"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+tk.color+';margin-right:5px;vertical-align:middle;flex-shrink:0"></span>'+esc(tk.lbl)+'</td>';
       var rOk=0,rEnt=0;
-      cols.forEach(function(c){var stored=trkGet(c.yr,c.m,tk.key,fi),ev=evalEntry(stored,getResolvedDL(c.yr,c.m,tk));var badge;if(ev.st==='ok'){badge=mkBadge(C_OK,'✓');rOk++;rEnt++;}else if(ev.st==='late'){badge=mkBadge(C_LATE,'+'+ev.days+'d');rEnt++;}else badge=mkGrey('–');var sc=(c.isLast&&c.yr===prevYr&&trkView==='2y')?' yr-sep':'';h+='<td class="'+sc+'"><div class="trk-cell" data-fi="'+fi+'" data-tk="'+tk.key+'" data-m="'+c.m+'" data-yr="'+c.yr+'">'+badge+'</div></td>';});
+      // Tracking používá trkMode pro výpočet termínů
+      cols.forEach(function(c){var stored=trkGet(c.yr,c.m,tk.key,fi),ev=evalEntry(stored,getResolvedDL(c.yr,c.m,tk,trkMode));var badge;if(ev.st==='ok'){badge=mkBadge(C_OK,'✓');rOk++;rEnt++;}else if(ev.st==='late'){badge=mkBadge(C_LATE,'+'+ev.days+'d');rEnt++;}else badge=mkGrey('–');var sc=(c.isLast&&c.yr===prevYr&&trkView==='2y')?' yr-sep':'';h+='<td class="'+sc+'"><div class="trk-cell" data-fi="'+fi+'" data-tk="'+tk.key+'" data-m="'+c.m+'" data-yr="'+c.yr+'">'+badge+'</div></td>';});
       h+='<td class="td-sum">'+mkPct(rEnt>0?Math.round(rOk/rEnt*100):null)+'</td></tr>';
     });
   }
   h+='<tr class="tr-sum"><td class="td-firm">'+lc('trkTotal')+'</td><td class="td-task"></td>';
   var gOk=0,gEnt=0;
-  cols.forEach(function(c){var cOk=0,cEnt=0;for(var fi2=0;fi2<n;fi2++){showTasks.forEach(function(tk){var ev=evalEntry(trkGet(c.yr,c.m,tk.key,fi2),getResolvedDL(c.yr,c.m,tk));if(ev.st==='ok'){cOk++;cEnt++;gOk++;gEnt++;}else if(ev.st==='late'){cEnt++;gEnt++;}});}var sc=(c.isLast&&c.yr===prevYr&&trkView==='2y')?' yr-sep':'';h+='<td class="'+sc+'" style="text-align:center">'+mkPct(cEnt>0?Math.round(cOk/cEnt*100):null)+'</td>';});
+  cols.forEach(function(c){var cOk=0,cEnt=0;for(var fi2=0;fi2<n;fi2++){showTasks.forEach(function(tk){var ev=evalEntry(trkGet(c.yr,c.m,tk.key,fi2),getResolvedDL(c.yr,c.m,tk,trkMode));if(ev.st==='ok'){cOk++;cEnt++;gOk++;gEnt++;}else if(ev.st==='late'){cEnt++;gEnt++;}});}var sc=(c.isLast&&c.yr===prevYr&&trkView==='2y')?' yr-sep':'';h+='<td class="'+sc+'" style="text-align:center">'+mkPct(cEnt>0?Math.round(cOk/cEnt*100):null)+'</td>';});
   h+='<td class="td-sum">'+mkPct(gEnt>0?Math.round(gOk/gEnt*100):null)+'</td></tr></tbody></table>';
   wrap.innerHTML=h;
   wrap.querySelectorAll('.trk-cell').forEach(function(cell){cell.addEventListener('click',function(){var fi=parseInt(this.dataset.fi),m=parseInt(this.dataset.m),yr2=parseInt(this.dataset.yr),key=this.dataset.tk,tk=null;for(var i=0;i<tasks.length;i++){if(tasks[i].key===key){tk=tasks[i];break;}}if(tk)openDp(yr2,m,tk,fi,this);});});
 }
 
-// ── date popup ────────────────────────────────────────────────────────────────
 function openDp(yr,m,tk,fi,cellEl){
-  dpState={yr:yr,m:m,tk:tk,fi:fi};var dl=getResolvedDL(yr,m,tk),stored=trkGet(yr,m,tk.key,fi);
+  dpState={yr:yr,m:m,tk:tk,fi:fi};var dl=getResolvedDL(yr,m,tk,trkMode),stored=trkGet(yr,m,tk.key,fi);
   document.getElementById('dp-title').textContent=lc('dpTitle')+': '+(G.firms[fi]||'Company');
   document.getElementById('dp-info').textContent=tk.lbl+' – '+TR[curLang].months[m-1]+' '+yr+(dl?'\n'+lc('dpDeadline')+' '+fmtDate(dl):'');
   document.getElementById('dp-date').value=stored||'';
@@ -735,7 +743,6 @@ function dpConfirm(){if(!dpState)return;trkSet(dpState.yr,dpState.m,dpState.tk.k
 document.addEventListener('keydown',function(e){if(e.key==='Escape')dpClose();});
 document.addEventListener('click',function(e){var pop=document.getElementById('dp-popup');if(pop.style.display==='block'&&!pop.contains(e.target)&&!e.target.closest('.trk-cell'))dpClose();});
 
-// ── demo seed ─────────────────────────────────────────────────────────────────
 function doSeed(){
   var st=document.getElementById('seed-status');st.textContent='...';G.tracking={};
   var tkDefs=[{key:'top_odhad',dl:9},{key:'ebt_odhad',dl:10},{key:'ctrl',dl:18},{key:'top_final',dl:19},{key:'ebt_final',dl:20}];
@@ -743,11 +750,10 @@ function doSeed(){
   var periods=[];for(var mm=1;mm<=12;mm++)periods.push({yr:2025,m:mm});periods.push({yr:2026,m:1});periods.push({yr:2026,m:2});
   var seed=99991;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967295;}function ri(a,b){return a+Math.floor(rnd()*(b-a+1));}
   var count=0;
-  for(var pi=0;pi<periods.length;pi++){var p=periods[pi];for(var ti=0;ti<tkDefs.length;ti++){var td=tkDefs[ti];var tk=null;for(var xi=0;xi<tasks.length;xi++){if(tasks[xi].key===td.key){tk=tasks[xi];break;}}var dlDt=tk?getResolvedDL(p.yr,p.m,tk):null;if(!dlDt){dlDt=new Date(p.yr,p.m-1,td.dl);while(dlDt.getDay()===0||dlDt.getDay()===6)dlDt=new Date(dlDt.getFullYear(),dlDt.getMonth(),dlDt.getDate()-1);}var dlY=dlDt.getFullYear(),dlM=dlDt.getMonth(),dlD=dlDt.getDate();for(var fi=0;fi<n;fi++){var r=rnd(),sub=null;if(r<0.60){var off=ri(0,3);sub=new Date(dlY,dlM,dlD-off);while(sub.getDay()===0||sub.getDay()===6)sub=new Date(sub.getFullYear(),sub.getMonth(),sub.getDate()-1);}else if(r<0.85)sub=new Date(dlY,dlM,dlD+ri(1,7));if(sub){G.tracking[p.yr+'_'+p.m+'_'+td.key+'_'+fi]=sub.getFullYear()+'-'+p2(sub.getMonth()+1)+'-'+p2(sub.getDate());count++;}}}}
+  for(var pi=0;pi<periods.length;pi++){var p=periods[pi];for(var ti=0;ti<tkDefs.length;ti++){var td=tkDefs[ti];var tk=null;for(var xi=0;xi<tasks.length;xi++){if(tasks[xi].key===td.key){tk=tasks[xi];break;}}var dlDt=tk?getResolvedDL(p.yr,p.m,tk,trkMode):null;if(!dlDt){dlDt=new Date(p.yr,p.m-1,td.dl);while(dlDt.getDay()===0||dlDt.getDay()===6)dlDt=new Date(dlDt.getFullYear(),dlDt.getMonth(),dlDt.getDate()-1);}var dlY=dlDt.getFullYear(),dlM=dlDt.getMonth(),dlD=dlDt.getDate();for(var fi=0;fi<n;fi++){var r=rnd(),sub=null;if(r<0.60){var off=ri(0,3);sub=new Date(dlY,dlM,dlD-off);while(sub.getDay()===0||sub.getDay()===6)sub=new Date(sub.getFullYear(),sub.getMonth(),sub.getDate()-1);}else if(r<0.85)sub=new Date(dlY,dlM,dlD+ri(1,7));if(sub){G.tracking[p.yr+'_'+p.m+'_'+td.key+'_'+fi]=sub.getFullYear()+'-'+p2(sub.getMonth()+1)+'-'+p2(sub.getDate());count++;}}}}
   trkSave();st.textContent='✓ '+count;if(curPage==='tracking')renderTracking();
 }
 
-// ── FX page ───────────────────────────────────────────────────────────────────
 function fxYears(){return Object.keys(G.fx).sort();}
 function fxBases(yr){return Object.keys((G.fx[yr]||{})).sort();}
 function buildFxSelects(){var selYr=document.getElementById('fx-yr'),selBase=document.getElementById('fx-base');var prevYr=selYr.value,prevBase=selBase.value;selYr.innerHTML='';selBase.innerHTML='';fxYears().forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;selYr.appendChild(o);});if(prevYr&&G.fx[prevYr])selYr.value=prevYr;var yr=selYr.value;fxBases(yr).forEach(function(b){var o=document.createElement('option');o.value=b;o.textContent=b;selBase.appendChild(o);});if(prevBase&&(G.fx[yr]||{})[prevBase])selBase.value=prevBase;}
@@ -758,7 +764,6 @@ function fxToggleEdit(){fxEditMode=!fxEditMode;renderFx();}
 function fxAddPair(){var yr=document.getElementById('fx-yr').value,base=document.getElementById('fx-base').value;var quote=prompt(curLang==='cz'?'Kód cílové měny (např. USD):':'Target currency code (e.g. USD):','');if(!quote)return;quote=quote.trim().toUpperCase();if(!quote)return;if(!G.fx[yr])G.fx[yr]={};if(!G.fx[yr][base])G.fx[yr][base]={};if(G.fx[yr][base][quote]!==undefined){alert(curLang==='cz'?'Pár již existuje.':'Pair already exists.');return;}G.fx[yr][base][quote]=0;fxSave();fxEditMode=true;renderFx();}
 function fxAddYear(){var yr=prompt(curLang==='cz'?'Zadejte rok:':'Enter year:','');if(!yr)return;yr=yr.trim();if(!/^\d{4}$/.test(yr)){alert(curLang==='cz'?'Neplatný rok.':'Invalid year.');return;}if(G.fx[yr]){alert(curLang==='cz'?'Rok již existuje.':'Year already exists.');return;}var years=fxYears(),src=years[years.length-1];G.fx[yr]=src?JSON.parse(JSON.stringify(G.fx[src])):{};fxSave();buildFxSelects();document.getElementById('fx-yr').value=yr;renderFx();}
 
-// ── calendar build ────────────────────────────────────────────────────────────
 function build(){
   var yr=parseInt(document.getElementById('yr').value)||2026,hols=getHols(yr),MAX=31;
   var months=TR[curLang].months,days=TR[curLang].days;
@@ -792,7 +797,6 @@ function build(){
   renderSidebar();
 }
 
-// ── startup ───────────────────────────────────────────────────────────────────
 sLoad(function(stored){
   G=stored||{};
   if(!G.labels)G.labels={};if(!G.deadlines)G.deadlines={};if(!G.tracking)G.tracking={};if(!G.pick)G.pick={};if(!G.fx)G.fx={};
@@ -804,9 +808,9 @@ sLoad(function(stored){
   document.getElementById('fc').value=G.firms.length||30;
   tasks=makeTasks(curLang);
   applyLabels();
-  // init button states
   activatePageBtn(document.getElementById('pg-cal'));
-  activateSmall(document.getElementById('mode-btn-pred'));
+  activateSmall(document.getElementById('mode-btn-pred'));   // Calendar default
+  activateSmall(document.getElementById('trk-btn-pred'));    // Tracking default
   activateSmall(document.getElementById('hol-cz'));
   activateSmall(document.getElementById('btn-view-2y'));
   switchLang('en',document.getElementById('lang-en'));
